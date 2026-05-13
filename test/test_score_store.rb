@@ -69,8 +69,11 @@ class TestScoreStore < Minitest::Test
   end
 
   def test_default_path_falls_back_to_local_share
+    original = ENV['XDG_DATA_HOME']
     ENV.delete('XDG_DATA_HOME')
     path = Azik::ScoreStore.default_path
     assert path.end_with?(File.join('.local', 'share', 'azik-typec', 'scores.jsonl'))
+  ensure
+    ENV['XDG_DATA_HOME'] = original
   end
 end

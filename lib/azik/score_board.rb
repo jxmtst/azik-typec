@@ -7,7 +7,6 @@ module Azik
     HALF = '▌'
     EMPTY_DAY = '·'
     CSI = "\e["
-    DIM = "#{CSI}90m"
     BOLD_CYAN = "#{CSI}1;36m"
     RESET = "#{CSI}0m"
 
