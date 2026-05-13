@@ -9,6 +9,9 @@ require 'azik/metrics'
 require 'azik/session'
 require 'azik/sentences'
 require 'azik/tui'
+require 'azik/score_record'
+require 'azik/score_store'
+require 'azik/score_board'
 
 module Azik
   class App
@@ -19,6 +22,7 @@ module Azik
       @decomposer = Decomposer.new(@entries)
       @mode = :sentence
       @acc = MetricsAccumulator.new
+      @store = ScoreStore.new(path: ScoreStore.default_path)
       new_session
     end
 
@@ -178,12 +182,47 @@ module Azik
       next_question if result == :complete
     end
 
+    def build_score_record(metrics, now)
+      ScoreRecord.new(
+        timestamp: now,
+        mode: :sentence,
+        raw_kpm: metrics.kpm,
+        effective_kpm: metrics.effective_kpm,
+        accuracy: metrics.accuracy,
+        total_keystrokes: metrics.total_keystrokes,
+        miss_count: metrics.miss_count,
+        elapsed_ms: metrics.elapsed_ms
+      )
+    end
+
+    def render_score_board(current_record)
+      now = current_record.timestamp
+      past_records = @store.load_all.reject { |r| r.timestamp == current_record.timestamp }
+      board = ScoreBoard.new(records: past_records, now: now)
+      today_past = past_records.select { |r| r.timestamp.to_date == now.to_date }
+      TUI.clear_screen
+      TUI.move(1, 1)
+      puts "=== AZIK Type [スコア] ===\r"
+      puts "\r"
+      puts board.render_current(current_record).gsub("\n", "\r\n")
+      puts "\r"
+      puts board.render_top_of_day(today_past.sort_by { |r| -r.effective_kpm }).gsub("\n", "\r\n")
+      puts "\r"
+      puts board.render_daily_chart(board.daily_bests(days: 14)).gsub("\n", "\r\n")
+    end
+
     def run
       TUI.with_raw_mode do |io|
         loop do
           render
           if time_up? || @finished
-            puts "\r\n終了しました。何かキーを押すと終了します。\r"
+            if @mode == :sentence && time_up?
+              @acc.update(total_keystrokes: @matcher.total_keystrokes, miss_count: @matcher.miss_count, elapsed_ms: elapsed_ms)
+              record = build_score_record(@acc.current, Time.now)
+              @store.append(record)
+              render_score_board(record)
+            end
+            puts "\r\n何かキーを押すと終了します。\r"
             io.getc
             break
           end
