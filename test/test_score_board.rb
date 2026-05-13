@@ -54,3 +54,57 @@ class TestScoreBoardAggregation < Minitest::Test
     assert_nil daily[12][:best]  # 5/11
   end
 end
+
+class TestScoreBoardRendering < Minitest::Test
+  def rec(time_str, eff)
+    Azik::ScoreRecord.new(
+      timestamp: Time.iso8601(time_str), mode: :sentence,
+      raw_kpm: eff + 10, effective_kpm: eff, accuracy: 0.95,
+      total_keystrokes: 300, miss_count: 15, elapsed_ms: 60_000
+    )
+  end
+
+  def now
+    Time.iso8601('2026-05-12T12:00:00+09:00')
+  end
+
+  def test_render_current_contains_kpm_values
+    board = Azik::ScoreBoard.new(records: [], now: now)
+    r = rec('2026-05-12T12:00:00+09:00', 298.1)
+    out = board.render_current(r)
+    assert_match(/298\.1/, out)
+    assert_match(/308\.1/, out)
+    assert_match(/95\.0%/, out)
+  end
+
+  def test_render_top_of_day_lists_rankings
+    today_records = [
+      rec('2026-05-12T08:00:00+09:00', 300.0),
+      rec('2026-05-12T09:00:00+09:00', 250.0)
+    ]
+    board = Azik::ScoreBoard.new(records: today_records, now: now)
+    out = board.render_top_of_day(today_records)
+    assert_match(/1\..*300\.0/, out)
+    assert_match(/2\..*250\.0/, out)
+  end
+
+  def test_render_top_of_day_shows_placeholder_when_empty
+    board = Azik::ScoreBoard.new(records: [], now: now)
+    out = board.render_top_of_day([])
+    assert_match(/記録なし/, out)
+  end
+
+  def test_render_daily_chart_highlights_today_and_shows_dash_for_missing
+    daily = [
+      { date: Date.new(2026, 5, 10), best: 200.0 },
+      { date: Date.new(2026, 5, 11), best: nil },
+      { date: Date.new(2026, 5, 12), best: 300.0 }
+    ]
+    board = Azik::ScoreBoard.new(records: [], now: now)
+    out = board.render_daily_chart(daily)
+    assert_match(/2026-05-12/, out)
+    assert_match(/300\.0/, out)
+    assert_match(/2026-05-11.* - /, out)
+    assert_match(/←/, out)
+  end
+end
