@@ -29,6 +29,10 @@ bin/az
 bundle exec rake test
 ```
 
+## スコア記録
+
+文章モードで制限時間を超過すると、KPM/正解率などを `~/.local/share/azik-typec/scores.jsonl`（`XDG_DATA_HOME` があればその配下）に追記し、終了直前に当日TOP5と過去14日の日次ベスト棒グラフを表示する。ドリル完了・ESC終了では記録しない。
+
 ## 構成
 
 - `lib/azik/entries.rb` — ローマ字テーブル
@@ -36,6 +40,9 @@ bundle exec rake test
 - `lib/azik/dag_shortest.rb` — 最短打鍵パス計算
 - `lib/azik/input_matcher.rb` — カーソル管理・キー判定
 - `lib/azik/metrics.rb` — KPM/正解率
+- `lib/azik/score_record.rb` — スコアレコード値オブジェクト
+- `lib/azik/score_store.rb` — JSONL 永続化
+- `lib/azik/score_board.rb` — 集計・スコア画面描画
 - `lib/azik/session.rb` — ドリル/文章セッション
 - `lib/azik/tui.rb` — raw入力・ANSI描画
 - `bin/az` — アプリ本体
