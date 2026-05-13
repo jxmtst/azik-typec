@@ -194,17 +194,18 @@ module Azik
       )
     end
 
-    def past_today_records(current_record)
-      @store.load_all.reject { |r| r.timestamp == current_record.timestamp }
-            .select { |r| r.timestamp.to_date == current_record.timestamp.to_date }
-            .sort_by { |r| -r.effective_kpm }
+    def past_today_records(current_record, records)
+      records.reject { |r| r.timestamp == current_record.timestamp }
+             .select { |r| r.timestamp.to_date == current_record.timestamp.to_date }
+             .sort_by { |r| -r.effective_kpm }
     end
 
     def render_score_board(current_record)
       now = current_record.timestamp
-      past_records = @store.load_all.reject { |r| r.timestamp == current_record.timestamp }
+      all_records = @store.load_all
+      past_records = all_records.reject { |r| r.timestamp == current_record.timestamp }
       board = ScoreBoard.new(records: past_records, now: now)
-      today_past = past_today_records(current_record)
+      today_past = past_today_records(current_record, all_records)
       TUI.clear_screen
       TUI.move(1, 1)
       puts "=== AZIK Type [スコア] ===\r"

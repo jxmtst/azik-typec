@@ -14,6 +14,7 @@ class TestApp < Minitest::Test
   end
 
   def test_past_today_records_excludes_current_and_other_dates
+    original = ENV['XDG_DATA_HOME']
     Dir.mktmpdir do |dir|
       ENV['XDG_DATA_HOME'] = dir
       app = Azik::App.new
@@ -26,12 +27,16 @@ class TestApp < Minitest::Test
       store.append(past_today)
       store.append(yesterday)
 
-      result = app.past_today_records(current)
+      all_records = store.load_all
+      result = app.past_today_records(current, all_records)
       assert_equal [300.0], result.map(&:effective_kpm)
     end
+  ensure
+    ENV['XDG_DATA_HOME'] = original
   end
 
   def test_build_score_record_truncates_subseconds
+    original = ENV['XDG_DATA_HOME']
     Dir.mktmpdir do |dir|
       ENV['XDG_DATA_HOME'] = dir
       app = Azik::App.new
@@ -41,5 +46,7 @@ class TestApp < Minitest::Test
       assert_equal 1_700_000_000, record.timestamp.to_i
       assert_equal 0, record.timestamp.subsec
     end
+  ensure
+    ENV['XDG_DATA_HOME'] = original
   end
 end
