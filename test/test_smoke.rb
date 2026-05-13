@@ -1,6 +1,8 @@
 require 'minitest/autorun'
 require 'azik/decomposer'
 require 'azik/input_matcher'
+require 'tmpdir'
+ENV['XDG_DATA_HOME'] = Dir.mktmpdir('azik-test-')
 
 class TestSmoke < Minitest::Test
   def setup
