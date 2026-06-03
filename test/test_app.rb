@@ -49,4 +49,24 @@ class TestApp < Minitest::Test
   ensure
     ENV['XDG_DATA_HOME'] = original
   end
+
+  def test_render_score_board_includes_current_record_in_daily_chart
+    original = ENV['XDG_DATA_HOME']
+    Dir.mktmpdir do |dir|
+      ENV['XDG_DATA_HOME'] = dir
+      app = Azik::App.new
+
+      current = make_record('2026-05-12T12:00:00+09:00', 250.0)
+      store = Azik::ScoreStore.new(path: Azik::ScoreStore.default_path)
+      store.append(current)
+
+      out, _err = capture_io { app.render_score_board(current) }
+      today_line = out.lines.find { |l| l.include?('2026-05-12') }
+      refute_nil today_line, '今日の行がチャートに存在すべき'
+      assert_match(/250\.0/, today_line, '今日の行に今回のKPMが表示されるべき')
+      refute_match(/2026-05-12.* - /, today_line, '今日の行が "-" になっていないこと')
+    end
+  ensure
+    ENV['XDG_DATA_HOME'] = original
+  end
 end

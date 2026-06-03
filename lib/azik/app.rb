@@ -203,8 +203,7 @@ module Azik
     def render_score_board(current_record)
       now = current_record.timestamp
       all_records = @store.load_all
-      past_records = all_records.reject { |r| r.timestamp == current_record.timestamp }
-      board = ScoreBoard.new(records: past_records, now: now)
+      board = ScoreBoard.new(records: all_records, now: now)
       today_past = past_today_records(current_record, all_records)
       TUI.clear_screen
       TUI.move(1, 1)
